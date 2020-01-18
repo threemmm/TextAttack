@@ -1,0 +1,9 @@
+torch==1.4.0
+torchvision
+Flask>=1.0
+numpy
+pandas
+scipy
+
+# Download TextAttack from source
+-e git+https://github.com/UVA-MachineLearningBioinformatics/TextAttack#egg=TextAttack
