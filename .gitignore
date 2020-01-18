@@ -27,3 +27,6 @@ tensorflow-hub
 
 # for Macs
 .DS_Store
+
+# Web_viz
+web_viz/virt
