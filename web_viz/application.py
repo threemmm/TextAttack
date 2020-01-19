@@ -1,11 +1,15 @@
 from flask import Flask
 from flask import render_template, request
+
 import textattack
 import textattack.run_attack as run_attack
+from textattack.tokenized_text import TokenizedText
 
 import json
 import numpy as np
 import pickle
+
+label_map = {0: "negative", 1: "positive"}
 
 def create_app():
 
@@ -35,17 +39,8 @@ def create_app():
 
         data = request.form
 
-        input_string = request.form['input_string']
-        model = request.form['model']
-        attack = request.form['attack']
-        recipe = request.form['recipe']
-        transformation = request.form['transformation']
-        constraint_type = request.form['constraint_type']
-        constraint_input = request.form['constraint_input']
-
         model_class = run_attack.MODEL_CLASS_NAMES[data['model']]
-        #model = eval(f'{model_class}()')
-        print(model_class)
+        model = eval(f'{model_class}()')
 
         if data['recipe'] == "none":
             # Build attack from given model, attack, transformation, and constraints
@@ -60,16 +55,23 @@ def create_app():
                 constraint = eval(f'{constraint_class}({data["constraint_input"]})')
                 constraints.append(constraint)
 
-
             attack_class = run_attack.ATTACK_CLASS_NAMES[request.form['attack']]
-            attack = eval(f'{attack_class}(model, transformations, ')
-            print(attack_class)
+            attack = eval(f'{attack_class}({model}, {transformation})')
+            attack.add_constraints(constraints)
 
         else:
-            # Build attack from recipe
+            recipe_class = run_attack.RECIPE_NAMES[data['recipe']]
+            attack = eval(f'{recipe_class}(model)')
+        
+        tokenized_input = TokenizedText(data['input_string'], model.tokenizer)
 
-            pass
+        pred = attack._call_model([tokenized_input])
+        label = int(pred.argmax())
 
+        print("Attacking...")
+        attack.attack([label, data['input_string']])
+
+        
         ret_val = {
 
         }
