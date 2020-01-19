@@ -1,13 +1,11 @@
 from flask import Flask
-from webapp import app
 from flask import render_template, request
-from os import listdir
+import textattack
+import textattack.run_attack as run_attack
 
 import json
 import numpy as np
 import pickle
-
-from webapp.models import dwb_model
 
 def create_app():
 
@@ -20,64 +18,63 @@ def create_app():
     @app.route('/')
     @app.route('/index')
     def index():
-      return render_template('index.html', title='Home')
+      return render_template('index.html', title='TextAttack Viz')
 
     # Example of how to add backend model to frontend template.
-    @app.route('/dwb')
-    def dwb():
-      return render_template('deepwordbug.html',
-          title='DeepWordBug Text Sequence',
+    @app.route('/about')
+    def about():
+      return render_template('about.html',
+          title='About TextAttack',
           model_name="dwb",)
       
     # Actually run the model
-    @app.route('/run_adversary', methods=['POST'])
-    def run_adversary():
-      print('Starting adversary generation')
-      model_name    = request.form['model_name']
+    @app.route('/run_textattack', methods=['POST'])
+    def run_textattack():
 
-      if model_name == 'dwb':
-        # Get input string + other parameters
-        s = request.form['input_string']
-        model_num = request.form['dwb_model_num']
-        power = int(request.form['dwb_power'])
-        scoring = request.form['dwb_scoring']
-        transform = request.form['dwb_transform']
+        print('Generating adverserial sample...')
 
-        original_class, adversary_class, adv_example, orig_likelihoods, adv_likelihoods, classes_list, max_scores, = dwb_model.visualize(
-          s, model_num, power, scoring, transform)
+        data = request.form
 
-        print(s)
-        print(adversary_class)
-        print(adv_example)
-        print(orig_likelihoods)
-        print(adv_likelihoods)
-        print(classes_list)
+        input_string = request.form['input_string']
+        model = request.form['model']
+        attack = request.form['attack']
+        recipe = request.form['recipe']
+        transformation = request.form['transformation']
+        constraint_type = request.form['constraint_type']
+        constraint_input = request.form['constraint_input']
 
-      # else if: add your code here!
+        model_class = run_attack.MODEL_CLASS_NAMES[data['model']]
+        #model = eval(f'{model_class}()')
+        print(model_class)
 
-      ret_val = {
-        'original_class': original_class, 
-        'adversary_class': adversary_class,
-        'original_text_data': [s],
-        'adv_text_data': [adv_example],
+        if data['recipe'] == "none":
+            # Build attack from given model, attack, transformation, and constraints
 
-        'orig_likelihood_data': [{
-          'x': classes_list,
-          'y': [float(y) for y in orig_likelihoods],
-          'marker': dict(color='rgb(26, 118, 255)'),
-          'type':'bar'
-        }],
-        'adv_likelihood_data': [{
-          'x': classes_list,
-          'y': [float(y) for y in adv_likelihoods],
-          'marker': dict(color='rgb(26, 118, 255)'),
-          'type':'bar'
-        }],
+            transformation_class = run_attack.TRANSFORMATION_CLASS_NAMES[data['transformation']]
+            transformation = eval(f'{transformation_class}()')
 
-        'max_scores': max_scores.tolist(),
-      }
+            constraints = []
+            if data['constraint_type'] != "none":
 
-      return json.dumps(ret_val)
+                constraint_class = run_attack.CONSTRAINT_CLASS_NAMES[data['constraint_type']]
+                constraint = eval(f'{constraint_class}({data["constraint_input"]})')
+                constraints.append(constraint)
+
+
+            attack_class = run_attack.ATTACK_CLASS_NAMES[request.form['attack']]
+            attack = eval(f'{attack_class}(model, transformations, ')
+            print(attack_class)
+
+        else:
+            # Build attack from recipe
+
+            pass
+
+        ret_val = {
+
+        }
+
+        return json.dumps(ret_val)
 
     return app
 
@@ -86,5 +83,5 @@ application = create_app()
 
 # run the app.
 if __name__ == "__main__":
-    application.run(debug=True)
+    application.run(debug=True, port=9000)
 

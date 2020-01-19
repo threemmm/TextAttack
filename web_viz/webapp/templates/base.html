@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="">
-    <meta name="author" content="Andrew Norton (QData group at UVA)">
+    <meta name="author" content="Jeffrey Yoo (QData group at UVA)">
     <!-- <link rel="icon" href="../../favicon.ico"> -->
     <title>{{ title }} - Adversarial Playground Text</title>
         <!-- Bootstrap core CSS -->
@@ -28,15 +28,17 @@
       } 
     </style> 
 
-    <nav class="navbar navbar-inverse navbar-fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand" href="index">Adversarial Playground Text</a>
+          <a class="navbar-brand" href="index">TextAttack Visualization</a>
         </div>
         
-        <div id="navbar" class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            <li class="{% block deepwb_current %}{% endblock %}"><a href="dwb">DeepWordBug Text Sequence</a></li>
+        <div class="collapse navbar-collapse" id="navbarText">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+              <a class="nav-link" href="about">About TextAttack <span class="sr-only">(current)</span></a>
+            </li>
           </ul>
         </div>
       </div>
@@ -48,35 +50,112 @@
         {% block title_information %}
         {% endblock %}
         
-        <!-- Menu to select model -->
-        <h4 align=left style='font-size: 17px; display:inline'> Choose a model! </h4>
-        <h4 align=left style='font-size: 17px; color:rgb(0,66,200); display:inline'>
-          <input type="Radio" Name="model" Value="0" checked> 0: AGNews &nbsp
-          <input type="Radio" Name="model" Value="1"> 1: Amazon  (1-5) &nbsp
-          <input type="Radio" Name="model" Value="2"> 2: Amazon  (+/-) &nbsp
-          <input type="Radio" Name="model" Value="3"> 3: DBPedia &nbsp 
-          <input type="Radio" Name="model" Value="5"> 5: Yahoo Answers &nbsp
-          <input type="Radio" Name="model" Value="6"> 6: Yelp  (1-5) &nbsp
-          <input type="Radio" Name="model" Value="7"> 7: Yelp  (+/-) &nbsp
-        </h4>
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">Input String</span>
+          </div>
+          <input type="text" class="form-control" aria-label="InputString" aria-describedby="InputString" id="InputString">
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id="generate_button">Generate Adverserial Sample</button>
+          </div>
+        </div>
+
       </div>
 
       <div class="row">
-        <!-- Column 1: Data -->
-        <div class="col-md-8">
-          <div class="panel panel-default">
+        <!-- Column 1: Options-->
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h4 class="card-title"> Options </h4>
+              
+              <h5><div class = "padded"> Model: </div>
+                <div class = "padded">
+                  <select id="model" class="form-control">
+                    <option value="bert-ag-news">BERT AG News</option>
+                    <option value="bert-imdb">BERT IMDB Sentiment</option>
+                    <option value="bert-mr">BERT Movie Review Sentiment</option>
+                    <option value="bert-yelp-sentiment">BERT Yelp Sentiment</option>
+                    <option value="cnn-ag-news">CNN AG News</option>
+                    <option value="cnn-imdb">CNN IMDB Sentiment</option>
+                    <option value="cnn-mr">CNN Movie Review Sentiment</option>
+                    <option value="cnn-yelp-sentiment">CNN Yelp Sentiment</option>
+                    <option value="lstm-ag-news">LSTM AG News</option>
+                    <option value="lstm-imdb">LSTM IMDB Sentiment</option>
+                    <option value="lstm-mr">LSTM Movie Review Sentiment</option>
+                    <option value="lstm-yelp-sentiment">LSTM Yelp Sentiment</option>
+                  </select>
+                </div>
+              </h5>
 
-            <!-- Row 1: text samples -->
+              <h5><div class = "padded"> Attack: </div>
+                <div class = "padded">
+                  <select id="attack" class="form-control">
+                    <option value="greedy-word">Greedy Word</option>
+                    <option value="greedy-word-wir">Greedy Word with Importance Ranking</option>
+                    <option value="ga-word">Genetic Algorithm</option>
+                  </select>
+                </div>
+              </h5>
+
+              <h5><div class = "padded"> Recipe (Optional): </div>
+                <p class="small" style="font-size:60%;">*Setting recipe overrides transformation and constraint</p>
+                  <select id="recipe" class="form-control">
+                    <option value="none" > None </option>
+                    <option value="alzantot">Alzantot 2018 - Genetic Algorithm</option>
+                    <option value="alz-adjusted">Alzantot 2018 - Genetic Algorithm Adjusted</option>
+                    <option value="textfooler">Jin 2019 - TextFooler</option>
+                    <option value="tf-adjusted">Jin 2019 - TextFooler Adjusted</option>
+                  </select>
+              </h5>
+
+              <h5><div class = "padded"> Transformation: </div>
+                <div class = "padded">
+                  <select id="transformation" class="form-control">
+                    <option value="word-swap-embedding">Word Swap - Embedding</option>
+                    <option value="word-swap-homoglyph">Word Swap - Homoglyph</option>
+                    <option value="word-swap-neighboring-char-swap">Word Swap - Neighboring Character Swap</option>
+                  </select>
+                </div>
+              </h5>
+
+              <h5><div class = "padded"> Constraint: </div>
+                <div class = "padded">
+                  <select id="constraint" class="form-control">
+                    <option value="none"> None </option>
+                    <option value="embedding">Word Embedding Distance</option>
+                    <option value="goog-lm">Google Language Model</option>
+                    <option value="bert">BERT</option>
+                    <option value="infer-sent">InferSent</option>
+                    <option value="use">Universal Sentence Encoder</option>
+                    <option value="lang-tool">Language Tool</option>
+                  </select>
+                  <div class = "padded">
+                  <h6> Constraint Input </h6>
+                    <input type="text" class="form-control" id="constraint_input" placeholder="{arg_1}={value_1}, {arg_2}={value_2} ...">
+                </div>
+              </h5>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 1: Adverserial Example Display -->
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-body">
+
+              <!-- Row 1: text samples -->
               <div class="row">
                 <div class="col-xs-6">
-                  <h3 align = center>Original Sample</strong></h3>
+                  <h4 align = center>Original Sample</strong></h4>
                   {% if model_name == "dwb" %}
                   <p class="text-center" id="originalSample"></p>
                   {% endif %}
                   <div id="orig-sample"></div>
                 </div> 
                 <div class="col-xs-6">
-                  <h3 align = center>Adversarial Sample</strong></h3>
+                  <h4 align = center>Adversarial Sample</strong></h4>
                   {% if model_name == "dwb" %}
                   <p class="text-center" id="advSample"></p>
                   {% endif %}
@@ -110,65 +189,13 @@
                   <p class="text-center" id="advLikelihood">
                   <div id="adv-likelihoods"></div>
                 </div>
-              </div> <!-- end of row 3 -->
+              </div> 
+              <!-- end of row 3 -->
             </div>
           </div>
         </div>
+      
 
-        <!-- Column 2: Menu of parameter options -->
-        <div class="col-md-4">
-          <div class="panel panel-default">
-            <div class="panel-heading"><h3 class = "panel-title"> Options </h3></div>
-            <div class="panel-body">
-              <h4> <strong> Input String: </strong>
-                <input id="s" type="text"/>
-              </h4>
-
-              <!-- DeepWordBug model is for text data specifically -->
-              {% if model_name == "dwb" %}
-              <p class="text-right" style="color:white">
-                <button type="button" style="background-color:#1A76FF">Generate Adversarial Text Sample</button>
-              </p>
-              {% else %}
-              <p class="text-right">
-                <button type="button" class="btn btn-primary">Generate Adversarial Sample</button>
-              </p>
-              {% endif %}
-
-              <!-- Menu of parameters; power, scoring, and transformer algorithm -->
-              <h4> <strong><div class = "padded"> Power (# words w/chars modified): </strong></div>
-              <div class = "padded">
-                <input type="number" id="dwbPower" class="form-control" value=2>
-              </div>
-              </h4>
-
-              <h4> <strong><div class = "padded"> Scoring Algorithm: </strong></div>
-              <div class = "padded">
-              <select id="dwbScoring" class="form-control">
-                <option value="replaceone">replaceone</option>
-                <option value="combined">combined</option>
-                <option value="temporal">temporal</option>
-                <option value="tail">tail</option>
-                <option value="random">random</option>
-                <option value="grad">grad</option>
-              </select>
-              </div>
-              </h4>
-
-              <h4> <strong><div class = "padded"> Transformer Algorithm: </strong></div>
-              <div class = "padded">
-              <select id="dwbTransform" class="form-control">
-                <option value="homoglyph">homoglyph</option>
-                <option value="swap">swap</option>
-                <option value="flip">flip</option>
-                <option value="insert">insert</option>
-                <option value="remove">remove</option>
-              </select>
-              </div>
-              </h4>
-            </div>
-        </div>
-        </div>
       </div>
     </div>
 
@@ -181,24 +208,26 @@
 
     <script>
 
-      $(document).ready(function(){  
-        if ("{{model_name}}" == "dwb") {
-          $("button").click(function(){
+      $(document).ready(function(){
+          $("#generate_button").click(function(){
             
-            var s = document.getElementById("s").value;
-            var model_button = $("input[name='model']:checked").val();
-            var dwb_power = document.getElementById("dwbPower").value;
-            var dwb_scoring = document.getElementById("dwbScoring").value;
-            var dwb_transform = document.getElementById("dwbTransform").value;
+            var input_string = document.getElementById("InputString").value;
+            var model = document.getElementById("model").value;
+            var attack = document.getElementById("attack").value;
+            var recipe = document.getElementById("recipe").value;
+            var transformation = document.getElementById("transformation").value;
+            var constraint_type = document.getElementById("constraint").value;
+            var constraint_input = document.getElementById("constraint_input").value;
 
-            $.post("run_adversary",
+            $.post("run_textattack",
             {
-              model_name      : "{{model_name}}",
-              input_string    : s, 
-              dwb_model_num   : model_button,
-              dwb_power       : dwb_power,
-              dwb_scoring     : dwb_scoring,
-              dwb_transform   : dwb_transform,
+              input_string    : input_string, 
+              model : model,
+              attack : attack,
+              recipe : recipe,
+              transformation : transformation,
+              constraint_type : constraint_type, 
+              constraint_input : constraint_input
             },
 
             function(data,status){
@@ -308,7 +337,12 @@
               Plotly.newPlot('adv-likelihoods', data['adv_likelihood_data'], chart_layout);
             }, "json");
           });
-        }  
+
+          $('#InputString').on('keyup', function(e) {
+            if (e.keyCode === 13) {
+                $('#generate_button').click();
+            }
+        });
       });
 
     </script>
