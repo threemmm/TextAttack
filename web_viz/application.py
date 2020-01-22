@@ -71,7 +71,7 @@ def create_app():
         print("Attacking...")
         attack_result = attack.attack([(label, data['input_string'])])
         print("Attack completed!")
-        
+        print(attack_result)
         ret_val = {
 
         }
