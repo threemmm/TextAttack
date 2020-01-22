@@ -46,7 +46,7 @@ def create_app():
             # Build attack from given model, attack, transformation, and constraints
 
             transformation_class = run_attack.TRANSFORMATION_CLASS_NAMES[data['transformation']]
-            transformation = eval(f'{transformation_class}()')
+            transformation = [eval(f'{transformation_class}()')]
 
             constraints = []
             if data['constraint_type'] != "none":
@@ -56,7 +56,7 @@ def create_app():
                 constraints.append(constraint)
 
             attack_class = run_attack.ATTACK_CLASS_NAMES[request.form['attack']]
-            attack = eval(f'{attack_class}({model}, {transformation})')
+            attack = eval(f'{attack_class}(model, transformation)')
             attack.add_constraints(constraints)
 
         else:
@@ -69,8 +69,8 @@ def create_app():
         label = int(pred.argmax())
 
         print("Attacking...")
-        attack.attack([label, data['input_string']])
-
+        attack_result = attack.attack([(label, data['input_string'])])
+        print("Attack completed!")
         
         ret_val = {
 
