@@ -1,85 +1,126 @@
+from abc import ABC
+
+from textattack.goal_function_results import GoalFunctionResult
 from textattack.shared import utils
 
-class AttackResult:
-    """
-    Result of an Attack run on a single (output, text_input) pair. 
+
+class AttackResult(ABC):
+    """Result of an Attack run on a single (output, text_input) pair.
 
     Args:
-        original_text (str): The original text
-        perturbed_text (str): The perturbed text resulting from the attack
-        original_output (int): he classification output of the original text
-        perturbed_output (int): The classification output of the perturbed text
-
+        original_result (GoalFunctionResult): Result of the goal function
+            applied to the original text
+        perturbed_result (GoalFunctionResult): Result of the goal function applied to the
+            perturbed text. May or may not have been successful.
     """
-    def __init__(self, original_text, perturbed_text, original_output,
-        perturbed_output, orig_score=None, perturbed_score=None):
-        if original_text is None:
-            raise ValueError('Attack original text cannot be None')
-        if perturbed_text is None:
-            raise ValueError('Attack perturbed text cannot be None')
-        if original_output is None:
-            raise ValueError('Attack original output cannot be None')
-        if perturbed_output is None:
-            raise ValueError('Attack perturbed output cannot be None')
-        self.original_text = original_text
-        self.perturbed_text = perturbed_text
-        self.original_output = original_output
-        self.perturbed_output = perturbed_output
-        self.orig_score = orig_score
-        self.perturbed_score = perturbed_score
-        self.num_queries = 0
-        
-        # We don't want the TokenizedText `ids` sticking around clogging up 
+
+    def __init__(self, original_result, perturbed_result):
+        if original_result is None:
+            raise ValueError("Attack original result cannot be None")
+        elif not isinstance(original_result, GoalFunctionResult):
+            raise TypeError(f"Invalid original goal function result: {original_result}")
+        if perturbed_result is None:
+            raise ValueError("Attack perturbed result cannot be None")
+        elif not isinstance(perturbed_result, GoalFunctionResult):
+            raise TypeError(
+                f"Invalid perturbed goal function result: {perturbed_result}"
+            )
+
+        self.original_result = original_result
+        self.perturbed_result = perturbed_result
+        self.num_queries = perturbed_result.num_queries
+
+        # We don't want the AttackedText attributes sticking around clogging up
         # space on our devices. Delete them here, if they're still present,
         # because we won't need them anymore anyway.
-        self.original_text.delete_tensors()
-        self.perturbed_text.delete_tensors()
+        self.original_result.attacked_text.free_memory()
+        self.perturbed_result.attacked_text.free_memory()
 
-    def __data__(self, color_method=None):
-        data = [self.result_str(color_method=color_method), 
-                self.original_text.text,
-                self.perturbed_text.text]
-        if color_method is not None:
-            data[1], data[2] = self.diff_color(color_method)
-        return data
-    
+    def original_text(self, color_method=None):
+        """Returns the text portion of `self.original_result`.
+
+        Helper method.
+        """
+        return self.original_result.attacked_text.printable_text(
+            key_color=("bold", "underline"), key_color_method=color_method
+        )
+
+    def perturbed_text(self, color_method=None):
+        """Returns the text portion of `self.perturbed_result`.
+
+        Helper method.
+        """
+        return self.perturbed_result.attacked_text.printable_text(
+            key_color=("bold", "underline"), key_color_method=color_method
+        )
+
+    def str_lines(self, color_method=None):
+        """A list of the lines to be printed for this result's string
+        representation."""
+        lines = [self.goal_function_result_str(color_method=color_method)]
+        lines.extend(self.diff_color(color_method))
+        return lines
+
     def __str__(self, color_method=None):
-        return '\n'.join(self.__data__(color_method=color_method))
-   
-    def result_str(self, color_method=None):
-        # @TODO add comment to distinguish this from __str__
-        orig_colored = utils.color_label(self.original_output, method=color_method)
-        pert_colored = utils.color_label(self.perturbed_output, method=color_method)
-        return orig_colored + '-->' + pert_colored
+        return "\n\n".join(self.str_lines(color_method=color_method))
+
+    def goal_function_result_str(self, color_method=None):
+        """Returns a string illustrating the results of the goal function."""
+        orig_colored = self.original_result.get_colored_output(color_method)
+        pert_colored = self.perturbed_result.get_colored_output(color_method)
+        return orig_colored + " --> " + pert_colored
 
     def diff_color(self, color_method=None):
-        """ 
-        Highlights the difference between two texts using color.
-        
-        """
-        t1 = self.original_text
-        t2 = self.perturbed_text
-        
-        if color_method is None:
-            return t1.text, t2.text
+        """Highlights the difference between two texts using color.
 
-        words1 = t1.words
-        words2 = t2.words
-        
-        c1 = utils.color_from_label(self.original_output)
-        c2 = utils.color_from_label(self.perturbed_output)
-        new_is = []
-        new_w1s = []
-        new_w2s = []
-        for i in range(min(len(words1), len(words2))):
-            w1 = words1[i]
-            w2 = words2[i]
-            if w1 != w2:
-                new_is.append(i)
-                new_w1s.append(utils.color(w1, c1, color_method))
-                new_w2s.append(utils.color(w2, c2, color_method))
-        
-        t1 = self.original_text.replace_words_at_indices(new_is, new_w1s)
-        t2 = self.original_text.replace_words_at_indices(new_is, new_w2s)
-                
-        return t1.clean_text(), t2.clean_text()
+        Has to account for deletions and insertions from original text to
+        perturbed. Relies on the index map stored in
+        ``self.original_result.attacked_text.attack_attrs["original_index_map"]``.
+        """
+        t1 = self.original_result.attacked_text
+        t2 = self.perturbed_result.attacked_text
+
+        if color_method is None:
+            return t1.printable_text(), t2.printable_text()
+
+        color_1 = self.original_result.get_text_color_input()
+        color_2 = self.perturbed_result.get_text_color_perturbed()
+
+        # iterate through and count equal/unequal words
+        words_1_idxs = []
+        t2_equal_idxs = set()
+        original_index_map = t2.attack_attrs["original_index_map"]
+        for t1_idx, t2_idx in enumerate(original_index_map):
+            if t2_idx == -1:
+                # add words in t1 that are not in t2
+                words_1_idxs.append(t1_idx)
+            else:
+                w1 = t1.words[t1_idx]
+                w2 = t2.words[t2_idx]
+                if w1 == w2:
+                    t2_equal_idxs.add(t2_idx)
+                else:
+                    words_1_idxs.append(t1_idx)
+
+        # words to color in t2 are all the words that didn't have an equal,
+        # mapped word in t1
+        words_2_idxs = list(sorted(set(range(t2.num_words)) - t2_equal_idxs))
+
+        # make lists of colored words
+        words_1 = [t1.words[i] for i in words_1_idxs]
+        words_1 = [utils.color_text(w, color_1, color_method) for w in words_1]
+        words_2 = [t2.words[i] for i in words_2_idxs]
+        words_2 = [utils.color_text(w, color_2, color_method) for w in words_2]
+
+        t1 = self.original_result.attacked_text.replace_words_at_indices(
+            words_1_idxs, words_1
+        )
+        t2 = self.perturbed_result.attacked_text.replace_words_at_indices(
+            words_2_idxs, words_2
+        )
+
+        key_color = ("bold", "underline")
+        return (
+            t1.printable_text(key_color=key_color, key_color_method=color_method),
+            t2.printable_text(key_color=key_color, key_color_method=color_method),
+        )

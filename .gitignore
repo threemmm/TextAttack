@@ -9,6 +9,10 @@ outputs/
 
 # IDE files
 .c9*
+.idea/
+
+# Jupyter notebook files
+.ipynb_checkpoints/
 
 # Sphinx documentation
 docs/_build/
@@ -19,9 +23,6 @@ docs/_build/
 # Files from IDES
 .*.py
 
-# CSVs to upload to MTurk
-*.csv
-
 # TF Hub modules
 tensorflow-hub
 
@@ -30,3 +31,15 @@ tensorflow-hub
 
 # Web_viz
 web_viz/virt
+# build outputs for PyPI
+build/
+dist/
+
+# Weights & Biases outputs
+wandb/
+
+# checkpoints
+checkpoints/
+
+# vim
+*.swp

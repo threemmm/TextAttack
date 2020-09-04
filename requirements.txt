@@ -1,22 +1,24 @@
+bert-score>=0.3.5
 editdistance
+flair==0.6.0.post1
 filelock
+language_tool_python
+lemminflect
 lru-dict
+nlp
 nltk
 numpy
-pandas
+pandas>=1.0.1
 scikit-learn
-scipy
-sentence_transformers
-spacy
+scipy==1.4.1
+sentence_transformers>0.2.6
 torch
-<<<<<<< HEAD
-transformers>=2.5.1
-tensorflow-gpu>=2
-=======
-transformers>=2.0.0
-tensorflow
->>>>>>> temp edit requirements.txt for local dev
+transformers==3.0.2
+tensorflow>=2
 tensorflow_hub
+tensorboardX
 terminaltables
+tokenizers==0.8.1-rc1
 tqdm
 visdom
+wandb

@@ -12,18 +12,20 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../textattack'))
 
+sys.path.insert(0, os.path.abspath(".."))
 
 # -- Project information -----------------------------------------------------
 
-project = 'TextAttack'
-copyright = '2019, UVA QData Lab'
-author = 'UVA QData Lab'
+project = "TextAttack"
+copyright = "2020, UVA QData Lab"
+author = "UVA QData Lab"
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = "0.2.7"
 
+# Set master doc to `index.rst`.
+master_doc = "index"
 
 # -- General configuration ---------------------------------------------------
 
@@ -31,29 +33,44 @@ release = '0.0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.viewcode',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    "sphinx_rtd_theme"
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx_rtd_theme",
+    # Enable .ipynb doc files
+    "nbsphinx",
+    # Enable .md doc files
+    "recommonmark",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = []
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 
+# Mock expensive textattack imports. Docs imports are in `docs/requirements.txt`.
+autodoc_mock_imports = []
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = []
+
+# Path to favicon.
+html_favicon = "favicon.png"
+
+# Don't show module names in front of class names.
+add_module_names = False
+
+# Sort members by group
+autodoc_member_order = "groupwise"
