@@ -15,9 +15,9 @@ sentence_transformers>0.2.6
 stanza
 torch
 transformers==3.3.0
-tensorflow>=2
+tensorflow>=2, <=2.3.0
 tensorflow_hub
-tensorflow_text>=2
+tensorflow_text>=2, <=2.3.0
 tensorboardX
 terminaltables
 tokenizers==0.8.1-rc2
