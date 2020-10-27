@@ -8,7 +8,8 @@ from textattack.transformations.word_swap import WordSwap
 
 
 class WordSwapMaskedLM(WordSwap):
-    """Generate potential replacements for a word using a masked language model.
+    """Generate potential replacements for a word using a masked language
+    model.
 
     Based off of three papers
         - "BAE: BERT-based Adversarial Examples for Text Classification" (Garg et al., 2020) https://arxiv.org/abs/2004.01970
@@ -27,7 +28,7 @@ class WordSwapMaskedLM(WordSwap):
         masked_language_model (str): the name of pretrained masked language model from `transformers` model hub. Default is `bert-base-uncased`.
         max_length (int): the max sequence length the masked language model is designed to work with. Default is 512.
         max_candidates (int): maximum number of candidates to consider as replacements for each word. Replacements are ranked by model's confidence.
-        min_confidence (float): minimum confidence threshold each replacement word must pass. 
+        min_confidence (float): minimum confidence threshold each replacement word must pass.
     """
 
     def __init__(
@@ -97,7 +98,7 @@ class WordSwapMaskedLM(WordSwap):
         mask_token_logits = preds[0, masked_index]
         mask_token_probs = torch.softmax(mask_token_logits, dim=0)
         ranked_indices = torch.argsort(mask_token_probs)
-        
+
         replacement_words = []
         for _id in ranked_indices:
             _id = _id.item()
@@ -105,7 +106,7 @@ class WordSwapMaskedLM(WordSwap):
             if utils.is_one_word(token) and not check_if_subword(token):
                 if mask_token_probs[_id] > self.min_confidence:
                     replacement_words.append(token)
-            
+
             if len(replacement_words) >= self.max_candidates:
                 break
 
