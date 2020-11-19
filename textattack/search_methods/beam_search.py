@@ -26,6 +26,7 @@ class BeamSearch(SearchMethod):
     def _perform_search(self, initial_result):
         beam = [initial_result.attacked_text]
         best_result = initial_result
+        all_transformed_results = []
         while not best_result.goal_status == GoalFunctionResultStatus.SUCCEEDED:
             potential_next_beam = []
             for text in beam:
@@ -36,18 +37,19 @@ class BeamSearch(SearchMethod):
                     potential_next_beam.append(next_text)
             if len(potential_next_beam) == 0:
                 # If we did not find any possible perturbations, give up.
-                return best_result
+                return best_result, all_transformed_results
             results, search_over = self.get_goal_results(potential_next_beam)
+            all_transformed_results.extend(results)
             scores = np.array([r.score for r in results])
             best_result = results[scores.argmax()]
             if search_over:
-                return best_result
+                return best_result, all_transformed_results
 
             # Refill the beam. This works by sorting the scores
             # in descending order and filling the beam from there.
             best_indices = (-scores).argsort()[: self.beam_width]
             beam = [potential_next_beam[i] for i in best_indices]
-        return best_result
+        return best_result, all_transformed_results
 
     @property
     def is_black_box(self):

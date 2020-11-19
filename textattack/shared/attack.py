@@ -264,22 +264,31 @@ class Attack:
             A ``SuccessfulAttackResult``, ``FailedAttackResult``,
                 or ``MaximizedAttackResult``.
         """
-        final_result = self.search_method(initial_result)
+        final_result, all_transformed_results = self.search_method(initial_result)
         self.clear_cache()
         if final_result.goal_status == GoalFunctionResultStatus.SUCCEEDED:
-            return SuccessfulAttackResult(
-                initial_result,
-                final_result,
+            return (
+                SuccessfulAttackResult(
+                    initial_result,
+                    final_result,
+                ),
+                all_transformed_results,
             )
         elif final_result.goal_status == GoalFunctionResultStatus.SEARCHING:
-            return FailedAttackResult(
-                initial_result,
-                final_result,
+            return (
+                FailedAttackResult(
+                    initial_result,
+                    final_result,
+                ),
+                all_transformed_results,
             )
         elif final_result.goal_status == GoalFunctionResultStatus.MAXIMIZING:
-            return MaximizedAttackResult(
-                initial_result,
-                final_result,
+            return (
+                MaximizedAttackResult(
+                    initial_result,
+                    final_result,
+                ),
+                all_transformed_results,
             )
         else:
             raise ValueError(f"Unrecognized goal status {final_result.goal_status}")
@@ -340,10 +349,10 @@ class Attack:
 
         for goal_function_result in examples:
             if goal_function_result.goal_status == GoalFunctionResultStatus.SKIPPED:
-                yield SkippedAttackResult(goal_function_result)
+                yield SkippedAttackResult(goal_function_result), [goal_function_result]
             else:
-                result = self.attack_one(goal_function_result)
-                yield result
+                result, all_transformed_results = self.attack_one(goal_function_result)
+                yield result, all_transformed_results
 
     def __repr__(self):
         """Prints attack parameters in a human-readable string.

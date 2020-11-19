@@ -434,15 +434,17 @@ def parse_logger_from_args(args):
     outputs_dir = os.path.join(
         current_dir, os.pardir, os.pardir, os.pardir, "outputs", "attacks"
     )
-    out_dir_txt = out_dir_csv = os.path.normpath(outputs_dir)
+    out_dir_txt = out_dir_csv = our_dir_sequences = os.path.normpath(outputs_dir)
 
     # Get default txt and csv file names
     if args.recipe:
         filename_txt = f"{args.model}_{args.recipe}_{timestamp}.txt"
         filename_csv = f"{args.model}_{args.recipe}_{timestamp}.csv"
+        filename_sequences_csv = f"{args.model}_{args.recipe}_sequences_{timestamp}.csv"
     else:
         filename_txt = f"{args.model}_{timestamp}.txt"
         filename_csv = f"{args.model}_{timestamp}.csv"
+        filename_sequences_csv = f"{args.model}_sequences_{timestamp}.csv"
 
     # if '--log-to-txt' specified with arguments
     if args.log_to_txt:
@@ -470,11 +472,26 @@ def parse_logger_from_args(args):
         else:
             filename_csv = f"{args.log_to_csv}.csv"
 
+    # if "--save-sequences-csv" is called
+    if args.save_sequences_csv:
+        # if user decide to save to a specific directory
+        if args.save_sequences_csv[-1] == "/":
+            our_dir_sequences = args.save_sequences_csv
+        # else if path + filename is given
+        elif args.save_sequences_csv[-4:] == ".csv":
+            our_dir_sequences = args.save_sequences_csv.rsplit("/", 1)[0]
+            filename_sequences_csv = args.save_sequences_csv.rsplit("/", 1)[-1]
+        # otherwise, customize filename
+        else:
+            filename_sequences_csv = f"{args.save_sequences_csv}.csv"
+
     # in case directory doesn't exist
     if not os.path.exists(out_dir_txt):
         os.makedirs(out_dir_txt)
     if not os.path.exists(out_dir_csv):
         os.makedirs(out_dir_csv)
+    if not os.path.exists(our_dir_sequences):
+        os.makedirs(our_dir_sequences)
 
     # if "--log-to-txt" specified in terminal command (with or without arg), save to a txt file
     if args.log_to_txt == "" or args.log_to_txt:
@@ -487,6 +504,16 @@ def parse_logger_from_args(args):
         csv_path = os.path.join(out_dir_csv, filename_csv)
         attack_log_manager.add_output_csv(csv_path, color_method)
         textattack.shared.logger.info(f"Logging to CSV at path {csv_path}.")
+
+    # if "--save-sequences-csv specified in terminal command(with  or without arg), save to a csv file
+    if args.save_sequences_csv == "" or args.save_sequences_csv:
+        # "--csv-style used to swtich from 'fancy' to 'plain'
+        # color_method = None if args.csv_style == "plain" else "file"
+        # todo add some style and format
+        color_method = "file"
+        csv_path = os.path.join(our_dir_sequences, filename_sequences_csv)
+        attack_log_manager.add_output_sequences_csv(csv_path, color_method)
+        textattack.shared.logger.info(f"Logging sequences to CSV at path {csv_path}.")
 
     # Visdom
     if args.enable_visdom:

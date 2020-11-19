@@ -115,8 +115,12 @@ def run(args, checkpoint=None):
             num_failures = 0
             num_successes = 0
 
-        for result in attack.attack_dataset(dataset, indices=worklist):
+        for result, all_transformed_results in attack.attack_dataset(
+            dataset, indices=worklist
+        ):
             attack_log_manager.log_result(result)
+            if attack_log_manager.save_sequences_logger is not None:
+                attack_log_manager.log_all_transformed_results(all_transformed_results)
 
             if not args.disable_stdout:
                 print("\n")

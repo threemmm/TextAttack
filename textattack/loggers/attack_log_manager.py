@@ -7,13 +7,20 @@ import numpy as np
 
 from textattack.attack_results import FailedAttackResult, SkippedAttackResult
 
-from . import CSVLogger, FileLogger, VisdomLogger, WeightsAndBiasesLogger
+from . import (
+    CSVLogger,
+    CSVSequencesLogger,
+    FileLogger,
+    VisdomLogger,
+    WeightsAndBiasesLogger,
+)
 
 
 class AttackLogManager:
     """Logs the results of an attack to all attached loggers."""
 
     def __init__(self):
+        self.save_sequences_logger = None
         self.loggers = []
         self.results = []
 
@@ -32,6 +39,11 @@ class AttackLogManager:
     def add_output_csv(self, filename, color_method):
         self.loggers.append(CSVLogger(filename=filename, color_method=color_method))
 
+    def add_output_sequences_csv(self, filename, color_method):
+        self.save_sequences_logger = CSVSequencesLogger(
+            filename=filename, color_method=color_method
+        )
+
     def log_result(self, result):
         """Logs an ``AttackResult`` on each of `self.loggers`."""
         self.results.append(result)
@@ -45,6 +57,12 @@ class AttackLogManager:
             self.log_result(result)
         self.log_summary()
 
+    def log_all_transformed_results(self, all_results):
+        """Logs all transofrmed results of each ``AttackResult`` on each of
+        `self.all_transformed_results`."""
+        for result in all_results:
+            self.save_sequences_logger.log_attack_result(result)
+
     def log_summary_rows(self, rows, title, window_id):
         for logger in self.loggers:
             logger.log_summary_rows(rows, title, window_id)
@@ -56,6 +74,8 @@ class AttackLogManager:
     def flush(self):
         for logger in self.loggers:
             logger.flush()
+        if self.save_sequences_logger is not None:
+            self.save_sequences_logger.flush()
 
     def log_attack_details(self, attack_name, model_name):
         # @TODO log a more complete set of attack details

@@ -38,12 +38,14 @@ class GreedyWordSwapWIR(SearchMethod):
         """Returns word indices of ``initial_text`` in descending order of
         importance."""
         len_text = len(initial_text.words)
+        all_transformed_results = []
 
         if self.wir_method == "unk":
             leave_one_texts = [
                 initial_text.replace_word_at_index(i, "[UNK]") for i in range(len_text)
             ]
             leave_one_results, search_over = self.get_goal_results(leave_one_texts)
+            all_transformed_results.extend(leave_one_results)
             index_scores = np.array([result.score for result in leave_one_results])
 
         elif self.wir_method == "weighted-saliency":
@@ -52,6 +54,7 @@ class GreedyWordSwapWIR(SearchMethod):
                 initial_text.replace_word_at_index(i, "[UNK]") for i in range(len_text)
             ]
             leave_one_results, search_over = self.get_goal_results(leave_one_texts)
+            all_transformed_results.extend(leave_one_results)
             saliency_scores = np.array([result.score for result in leave_one_results])
 
             softmax_saliency_scores = softmax(
@@ -71,6 +74,7 @@ class GreedyWordSwapWIR(SearchMethod):
                     delta_ps.append(0.0)
                     continue
                 swap_results, _ = self.get_goal_results(transformed_text_candidates)
+                all_transformed_results.extend(swap_results)
                 score_change = [result.score for result in swap_results]
                 max_score_change = np.max(score_change)
                 delta_ps.append(max_score_change)
@@ -82,6 +86,7 @@ class GreedyWordSwapWIR(SearchMethod):
                 initial_text.delete_word_at_index(i) for i in range(len_text)
             ]
             leave_one_results, search_over = self.get_goal_results(leave_one_texts)
+            all_transformed_results.extend(leave_one_results)
             index_scores = np.array([result.score for result in leave_one_results])
 
         elif self.wir_method == "gradient":
@@ -110,14 +115,16 @@ class GreedyWordSwapWIR(SearchMethod):
         if self.wir_method != "random":
             index_order = (-index_scores).argsort()
 
-        return index_order, search_over
+        return index_order, search_over, all_transformed_results
 
     def _perform_search(self, initial_result):
         attacked_text = initial_result.attacked_text
-
+        all_transformed_results = []
         # Sort words by order of importance
-        index_order, search_over = self._get_index_order(attacked_text)
-
+        index_order, search_over, attack_sequences = self._get_index_order(
+            attacked_text
+        )
+        all_transformed_results.extend(attack_sequences)
         i = 0
         cur_result = initial_result
         results = None
@@ -131,6 +138,7 @@ class GreedyWordSwapWIR(SearchMethod):
             if len(transformed_text_candidates) == 0:
                 continue
             results, search_over = self.get_goal_results(transformed_text_candidates)
+            all_transformed_results.extend(results)
             results = sorted(results, key=lambda x: -x.score)
             # Skip swaps which don't improve the score
             if results[0].score > cur_result.score:
@@ -157,9 +165,9 @@ class GreedyWordSwapWIR(SearchMethod):
                     if similarity_score > max_similarity:
                         max_similarity = similarity_score
                         best_result = result
-                return best_result
+                return best_result, all_transformed_results
 
-        return cur_result
+        return cur_result, all_transformed_results
 
     def check_transformation_compatibility(self, transformation):
         """Since it ranks words by their importance, GreedyWordSwapWIR is

@@ -113,6 +113,17 @@ class AttackCommand(TextAttackCommand):
         )
 
         parser.add_argument(
+            "--save-sequences-csv",
+            nargs="?",
+            default=None,
+            const="",
+            type=str,
+            help="Save all attack sequences to <install-dir>/outputs/~ by default; Include '/' at the end of argument to save "
+            "sequences for each adversarial example to specified directory in default naming convention;"
+            "The output is helpful for working on detection systems against black-box attack",
+        )
+
+        parser.add_argument(
             "--enable-visdom", action="store_true", help="Enable logging to visdom."
         )
 
